@@ -1,0 +1,13 @@
+[package]
+name = "fsync"
+version = "0.1.0"
+authors = ["Erle Carrara <carrara.erle@gmail.com>"]
+repository = "https://github.com/ecarrara/fsync-rs.git"
+homepage = "https://github.com/ecarrara/fsync-rs"
+license = "MIT"
+readme = "README.md"
+description = "Keeps files and directories synchronized."
+
+[dependencies]
+libc = "0.2.21"
+error-chain = "0.10.0"
