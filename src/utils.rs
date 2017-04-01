@@ -1,5 +1,4 @@
 use errors::Result;
-use libc::{futimens, timespec, c_long, time_t};
 use std::fs::File;
 use std::io::Error as IOError;
 use std::os::unix::io::AsRawFd;
@@ -7,11 +6,10 @@ use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 
-/// Set file acessed and modified time.
-pub fn set_file_times<P: AsRef<Path>>(path: P,
-                                      atime: &SystemTime,
-                                      mtime: &SystemTime)
-                                      -> Result<()> {
+#[cfg(not(target_os="macos"))]
+fn futime(file: &File, atime: &SystemTime, mtime: &SystemTime) -> Result<()> {
+    use libc::{futimens, timespec, c_long, time_t};
+
     let atime_since_epoch = atime.duration_since(UNIX_EPOCH)?;
     let mtime_since_epoch = mtime.duration_since(UNIX_EPOCH)?;
 
@@ -24,13 +22,44 @@ pub fn set_file_times<P: AsRef<Path>>(path: P,
                      tv_nsec: mtime_since_epoch.subsec_nanos() as c_long,
                  }];
 
-    let file = File::open(path)?;
-    let ret = unsafe { futimens(file.as_raw_fd(), times.as_ptr()) };
-    if ret == 0 {
+    if unsafe { futimens(file.as_raw_fd(), times.as_ptr()) } == 0 {
         Ok(())
     } else {
         bail!(IOError::last_os_error())
     }
+}
+
+#[cfg(target_os="macos")]
+fn futime(file: &File, atime: &SystemTime, mtime: &SystemTime) -> Result<()> {
+    use libc::{futimes, timeval, suseconds_t, time_t};
+
+    let atime_since_epoch = atime.duration_since(UNIX_EPOCH)?;
+    let mtime_since_epoch = mtime.duration_since(UNIX_EPOCH)?;
+
+    let times = [timeval {
+                     tv_sec: atime_since_epoch.as_secs() as time_t,
+                     tv_usec: atime_since_epoch.subsec_nanos() as suseconds_t,
+                 },
+                 timeval {
+                     tv_sec: mtime_since_epoch.as_secs() as time_t,
+                     tv_usec: mtime_since_epoch.subsec_nanos() as suseconds_t,
+                 }];
+
+    if unsafe { futimes(file.as_raw_fd(), times.as_ptr()) } == 0 {
+        Ok(())
+    } else {
+        bail!(IOError::last_os_error())
+    }
+}
+
+
+/// Set file acessed and modified time.
+pub fn set_file_times<P: AsRef<Path>>(path: P,
+                                      atime: &SystemTime,
+                                      mtime: &SystemTime)
+                                      -> Result<()> {
+    let file = File::open(path)?;
+    futime(&file, &atime, &mtime)
 }
 
 
