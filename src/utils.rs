@@ -37,13 +37,20 @@ pub fn set_file_times<P: AsRef<Path>>(path: P,
 #[cfg(test)]
 mod tests {
     use std::time::{Duration, UNIX_EPOCH};
+    use std::fs::copy;
     use super::set_file_times;
+    use tempdir::TempDir;
 
     #[test]
     fn test_set_file_times() {
         // Oct, 27 -> a special date! :D
         let atime = UNIX_EPOCH + Duration::from_secs(1509062400);
         let mtime = UNIX_EPOCH + Duration::from_secs(1509105600);
-        set_file_times("./test_files/a.txt", &atime, &mtime).unwrap();
+
+        let temp_dir = TempDir::new("test_set_file_times").unwrap();
+        let test_filepath = temp_dir.path().join("a.txt");
+        copy("./test_files/a.txt", &test_filepath).unwrap();
+
+        set_file_times(&test_filepath, &atime, &mtime).unwrap();
     }
 }

@@ -7,6 +7,7 @@
 #[macro_use]
 extern crate error_chain;
 extern crate libc;
+extern crate tempdir;
 
 mod errors;
 mod utils;

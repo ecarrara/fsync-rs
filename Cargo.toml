@@ -11,3 +11,4 @@ description = "Keeps files and directories synchronized."
 [dependencies]
 libc = "0.2.21"
 error-chain = "0.10.0"
+tempdir = "0.3.5"

@@ -1,0 +1,31 @@
+dist: trusty
+language: rust
+services: docker
+sudo: required
+
+matrix:
+  include:
+    # Linux
+    - env: TARGET=x86_64-unknown-linux-gnu
+    - env: TARGET=x86_64-unknown-linux-musl
+    # OSX
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+    # Testing other channels
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: beta
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: nightly
+
+install:
+  - bash ci/install.sh
+  - source ~/.cargo/env || true
+
+script:
+  - bash ci/script.sh
+
+
+cache: cargo
+before_cache:
+  # Travis can't cache files that are not readable by "others"
+  - chmod -R a+r $HOME/.cargo
