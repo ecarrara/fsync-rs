@@ -62,6 +62,13 @@ pub fn set_file_times<P: AsRef<Path>>(path: P,
     futime(&file, &atime, &mtime)
 }
 
+pub fn copy_file_times<P: AsRef<Path>>(source: P, target: P) -> Result<()> {
+    let source_file = File::open(source.as_ref())?;
+    let source_metadata = source_file.metadata()?;
+
+    set_file_times(target, &source_metadata.accessed()?, &source_metadata.modified()?)
+}
+
 
 #[cfg(test)]
 mod tests {
