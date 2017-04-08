@@ -76,7 +76,6 @@ pub fn have_same_contents<P: AsRef<Path>>(source: P, target: P) -> Result<bool> 
         }
 
         if &source_buffer[..] != &target_buffer[..] {
-            println!("eta porra");
             return Ok(false)
         }
     }
@@ -86,20 +85,48 @@ pub fn have_same_contents<P: AsRef<Path>>(source: P, target: P) -> Result<bool> 
 
 #[cfg(test)]
 mod tests {
+    use std::fs::File;
+    use std::io::Write;
+    use std::path::Path;
+    use std::time::SystemTime;
+    use std::time::{Duration, UNIX_EPOCH};
+    use utils;
+    use errors::Result;
     use super::is_equals;
+
+    fn create_test_file<P: AsRef<Path>>(path: P,
+                                        buf: &[u8],
+                                        time: &SystemTime) -> Result<()> {
+        let mut file = File::create(path)?;
+        file.write_all(buf)?;
+        utils::set_file_times(&file, &time, &time)
+    }
 
     #[test]
     fn equals_files_are_equals() {
+        let test_time = UNIX_EPOCH + Duration::from_secs(1509062400);
+        create_test_file("test_files/a.txt", b"avocado", &test_time).unwrap();
+        create_test_file("test_files/b.txt", b"avocado", &test_time).unwrap();
+
         assert!(is_equals("./test_files/a.txt", "./test_files/b.txt").unwrap());
     }
 
     #[test]
     fn files_with_same_contents_but_different_mtime_not_are_equals() {
-        assert!(!is_equals("./test_files/a.txt", "./test_files/c.txt").unwrap());
+        let test_time_a = UNIX_EPOCH + Duration::from_secs(1509062400);
+        let test_time_b = UNIX_EPOCH + Duration::from_secs(1509068400);
+        create_test_file("test_files/c.txt", b"avocado", &test_time_a).unwrap();
+        create_test_file("test_files/d.txt", b"avocado", &test_time_b).unwrap();
+
+        assert!(!is_equals("./test_files/c.txt", "./test_files/d.txt").unwrap());
     }
 
     #[test]
     fn files_with_different_contents_and_same_mtime_not_are_equals() {
-        assert!(!is_equals("./test_files/a.txt", "./test_files/d.txt").unwrap());
+        let test_time = UNIX_EPOCH + Duration::from_secs(1509062400);
+        create_test_file("test_files/e.txt", b"avocado", &test_time).unwrap();
+        create_test_file("test_files/f.txt", b"banana", &test_time).unwrap();
+
+        assert!(!is_equals("./test_files/e.txt", "./test_files/f.txt").unwrap());
     }
 }

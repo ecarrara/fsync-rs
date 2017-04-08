@@ -54,11 +54,9 @@ fn futime(file: &File, atime: &SystemTime, mtime: &SystemTime) -> Result<()> {
 
 
 /// Set file acessed and modified time.
-pub fn set_file_times<P: AsRef<Path>>(path: P,
-                                      atime: &SystemTime,
-                                      mtime: &SystemTime)
-                                      -> Result<()> {
-    let file = File::open(path)?;
+pub fn set_file_times(file: &File,
+                      atime: &SystemTime,
+                      mtime: &SystemTime) -> Result<()> {
     futime(&file, &atime, &mtime)
 }
 
@@ -66,14 +64,15 @@ pub fn copy_file_times<P: AsRef<Path>>(source: P, target: P) -> Result<()> {
     let source_file = File::open(source.as_ref())?;
     let source_metadata = source_file.metadata()?;
 
-    set_file_times(target, &source_metadata.accessed()?, &source_metadata.modified()?)
+    let target_file = File::open(target.as_ref())?;
+    set_file_times(&target_file, &source_metadata.accessed()?, &source_metadata.modified()?)
 }
 
 
 #[cfg(test)]
 mod tests {
     use std::time::{Duration, UNIX_EPOCH};
-    use std::fs::copy;
+    use std::fs::{File, copy};
     use super::set_file_times;
     use tempdir::TempDir;
 
@@ -87,6 +86,7 @@ mod tests {
         let test_filepath = temp_dir.path().join("a.txt");
         copy("./test_files/a.txt", &test_filepath).unwrap();
 
-        set_file_times(&test_filepath, &atime, &mtime).unwrap();
+        let test_file = File::open("./test_files/a.txt").unwrap();
+        set_file_times(&test_file, &atime, &mtime).unwrap();
     }
 }
