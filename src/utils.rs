@@ -72,9 +72,8 @@ pub fn copy_file_times<P: AsRef<Path>>(source: P, target: P) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use std::time::{Duration, UNIX_EPOCH};
-    use std::fs::{File, copy};
+    use std::fs::File;
     use super::set_file_times;
-    use tempdir::TempDir;
 
     #[test]
     fn test_set_file_times() {
@@ -82,11 +81,7 @@ mod tests {
         let atime = UNIX_EPOCH + Duration::from_secs(1509062400);
         let mtime = UNIX_EPOCH + Duration::from_secs(1509105600);
 
-        let temp_dir = TempDir::new("test_set_file_times").unwrap();
-        let test_filepath = temp_dir.path().join("a.txt");
-        copy("./test_files/a.txt", &test_filepath).unwrap();
-
-        let test_file = File::open("./test_files/a.txt").unwrap();
+        let test_file = File::create("/tmp/test_set_file_times.txt").unwrap();
         set_file_times(&test_file, &atime, &mtime).unwrap();
     }
 }

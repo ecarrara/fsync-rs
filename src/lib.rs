@@ -105,28 +105,28 @@ mod tests {
     #[test]
     fn equals_files_are_equals() {
         let test_time = UNIX_EPOCH + Duration::from_secs(1509062400);
-        create_test_file("test_files/a.txt", b"avocado", &test_time).unwrap();
-        create_test_file("test_files/b.txt", b"avocado", &test_time).unwrap();
+        create_test_file("/tmp/a.txt", b"avocado", &test_time).unwrap();
+        create_test_file("/tmp/b.txt", b"avocado", &test_time).unwrap();
 
-        assert!(is_equals("./test_files/a.txt", "./test_files/b.txt").unwrap());
+        assert!(is_equals("/tmp/a.txt", "/tmp/b.txt").unwrap());
     }
 
     #[test]
     fn files_with_same_contents_but_different_mtime_not_are_equals() {
         let test_time_a = UNIX_EPOCH + Duration::from_secs(1509062400);
         let test_time_b = UNIX_EPOCH + Duration::from_secs(1509068400);
-        create_test_file("test_files/c.txt", b"avocado", &test_time_a).unwrap();
-        create_test_file("test_files/d.txt", b"avocado", &test_time_b).unwrap();
+        create_test_file("/tmp/c.txt", b"avocado", &test_time_a).unwrap();
+        create_test_file("/tmp/d.txt", b"avocado", &test_time_b).unwrap();
 
-        assert!(!is_equals("./test_files/c.txt", "./test_files/d.txt").unwrap());
+        assert!(!is_equals("/tmp/c.txt", "/tmp/d.txt").unwrap());
     }
 
     #[test]
     fn files_with_different_contents_and_same_mtime_not_are_equals() {
         let test_time = UNIX_EPOCH + Duration::from_secs(1509062400);
-        create_test_file("test_files/e.txt", b"avocado", &test_time).unwrap();
-        create_test_file("test_files/f.txt", b"banana", &test_time).unwrap();
+        create_test_file("/tmp/e.txt", b"avocado", &test_time).unwrap();
+        create_test_file("/tmp/f.txt", b"banana", &test_time).unwrap();
 
-        assert!(!is_equals("./test_files/e.txt", "./test_files/f.txt").unwrap());
+        assert!(!is_equals("/tmp/e.txt", "/tmp/f.txt").unwrap());
     }
 }
