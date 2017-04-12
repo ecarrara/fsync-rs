@@ -8,15 +8,63 @@
 extern crate error_chain;
 extern crate libc;
 extern crate tempdir;
+extern crate walkdir;
 
 mod errors;
 mod utils;
 
-use errors::Result;
-use std::fs::{File, copy};
+use errors::{Result, ErrorKind};
+use std::fs::{File, copy, create_dir};
 use std::io::Read;
 use std::path::Path;
+use walkdir::WalkDir;
 
+/// Copy modified or new files from `source` to `path`.
+pub fn sync<P: AsRef<Path>>(source: P, target: P) -> Result<u64> {
+    let source = source.as_ref();
+    let target = target.as_ref();
+
+    if source.is_file() && target.is_file() {
+        return sync_file(&source, &target);
+    }
+
+    if source.is_file() && target.is_dir() {
+        return sync_file(&source, &target.join(source.file_name().unwrap()).as_path());
+    }
+
+    if source.is_dir() && target.is_file() {
+        bail!(ErrorKind::InvalidUsage("source is a directory but target is a file".to_string()))
+    }
+
+    // source and target are directories or source is a dreictory and target does not exists
+    let mut copied = 0u64;
+    for entry in WalkDir::new(source) {
+        match entry {
+            Ok(entry) => {
+                let relative_path = entry.path().strip_prefix(&source).unwrap();
+                let target_path = target.join(relative_path);
+
+                if entry.path().is_dir() {
+                    if !target_path.exists() {
+                        if let Err(error) = create_dir(target_path) {
+                            println!("Error: {:?}", error);
+                        }
+                    }
+                } else {
+                    match sync_file(entry.path(), target_path.as_path()) {
+                        Ok(c) => copied += c,
+                        Err(error) => println!("Error: {:?}", error)
+                    }
+                }
+            },
+            Err(error) => {
+                println!("Error: {:?}", error);
+            }
+        }
+    }
+
+    Ok((copied))
+}
 
 /// Copy `source` to `target` only if files are different.
 pub fn sync_file<P: AsRef<Path>>(source: P, target: P) -> Result<u64> {
@@ -38,6 +86,10 @@ pub fn sync_file<P: AsRef<Path>>(source: P, target: P) -> Result<u64> {
 pub fn is_equals<P: AsRef<Path>>(source: P, target: P) -> Result<bool> {
     let source = source.as_ref();
     let target = target.as_ref();
+
+    if !target.exists() {
+        return Ok(false);
+    }
 
     let source_metadata = source.metadata()?;
     let target_metadata = target.metadata()?;
