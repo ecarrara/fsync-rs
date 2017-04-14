@@ -16,3 +16,6 @@ libc = "0.2.21"
 error-chain = "0.10.0"
 tempdir = "0.3.5"
 walkdir = "1.0.7"
+
+[badges]
+travis-ci = { repository = "ecarrara/fsync-rs" }
